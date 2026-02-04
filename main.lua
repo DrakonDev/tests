@@ -1,12 +1,22 @@
+-- =========================
+-- SERVIÇOS
+-- =========================
+
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 
-local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Fznkb2zo/.TheCleaner/refs/heads/main/lib/libraly.lua"))()
+-- =========================
+-- UI (REDZ LIB)
+-- =========================
+
+local redzlib = loadstring(
+    game:HttpGet("https://raw.githubusercontent.com/Fznkb2zo/.TheCleaner/refs/heads/main/lib/libraly.lua")
+)()
 
 local Window = redzlib:MakeWindow({
-  Title = "redz Hub : Blox Fruits",
-  SubTitle = "by redz9999",
-  SaveFolder = "testando | redz lib v5.lua"
+    Title = "redz Hub : Blox Fruits",
+    SubTitle = "by redz9999",
+    SaveFolder = "testando | redz lib v5.lua"
 })
 
 Window:AddMinimizeButton({	
@@ -16,11 +26,21 @@ Window:AddMinimizeButton({
 
 local Tab1 = Window:MakeTab({"Player", "users"})
 
+-- =========================
+-- VARIÁVEIS GLOBAIS
+-- =========================
+
 local webhookSelected = nil
 local selectedPlayer = nil
 
+-- =========================
+-- FUNÇÕES AUXILIARES
+-- =========================
+
 local function getPlayerByPartialName(text)
-    if not text or text == "" then return nil end
+    if not text or text == "" then
+        return nil
+    end
 
     text = string.lower(text)
 
@@ -36,12 +56,41 @@ local function getPlayerByPartialName(text)
     return nil
 end
 
--- CONVERTER AccountAge PARA DATA DE CRIAÇÃO
 local function getCreationDateFromAccountAge(days)
     local now = os.time()
     local creationTime = now - (days * 24 * 60 * 60)
     return os.date("%d/%m/%Y", creationTime)
 end
+
+local function getExecutorRequest()
+    return (syn and syn.request)
+        or (http and http.request)
+        or http_request
+        or (fluxus and fluxus.request)
+end
+
+local function getCharacterInfo(player)
+    local character = player.Character
+    local humanoid = character and character:FindFirstChild("Humanoid")
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+
+    local positionText = "N/A"
+
+    if root then
+        local pos = root.Position
+        positionText = string.format("X: %.1f | Y: %.1f | Z: %.1f", pos.X, pos.Y, pos.Z)
+    end
+
+    return {
+        humanoid = humanoid,
+        root = root,
+        positionText = positionText
+    }
+end
+
+-- =========================
+-- COMPONENTES DA INTERFACE
+-- =========================
 
 Tab1:AddTextBox({ 
     Name = "Nome do Jogador",  
@@ -61,7 +110,7 @@ Tab1:AddTextBox({
 
 Tab1:AddTextBox({ 
     Name = "Webhook:",  
-    PlaceholderText = "Ex: https://discord.com/api/webhooks/URL", 
+    PlaceholderText = "Input", 
     Callback = function(Value)
         webhookSelected = Value
     end
@@ -80,23 +129,21 @@ Tab1:AddButton({
             return
         end
 
+        local request = getExecutorRequest()
+        if not request then
+            warn("Executor não suporta requests HTTP")
+            return
+        end
+
         local player = selectedPlayer
         local userId = player.UserId
         local timeNow = os.date("%d/%m/%Y %H:%M:%S")
         local creationDate = getCreationDateFromAccountAge(player.AccountAge)
 
-        local character = player.Character
-        local humanoid = character and character:FindFirstChild("Humanoid")
-        local root = character and character:FindFirstChild("HumanoidRootPart")
-
-        local positionText = "N/A"
-        if root then
-            local pos = root.Position
-            positionText = string.format("X: %.1f | Y: %.1f | Z: %.1f", pos.X, pos.Y, pos.Z)
-        end
+        local charInfo = getCharacterInfo(player)
 
         local embed = {
-            title = "🔍 Player Search Result",
+            title = "Player Search Result",
             color = 0x00A2FF,
             thumbnail = {
                 url = string.format(
@@ -106,77 +153,77 @@ Tab1:AddButton({
             },
             fields = {
                 {
-                    name = "👤 Player",
+                    name = "Player",
                     value = string.format("%s (@%s)", player.DisplayName, player.Name),
                     inline = false
                 },
                 {
-                    name = "🆔 User ID",
+                    name = "User ID",
                     value = tostring(userId),
                     inline = true
                 },
                 {
-                    name = "📅 Data de criação",
+                    name = "Data de criação",
                     value = creationDate,
                     inline = true
                 },
                 {
-                    name = "📆 Account Age",
+                    name = "Account Age",
                     value = tostring(player.AccountAge) .. " dias",
                     inline = true
                 },
                 {
-                    name = "💎 Membership",
+                    name = "Membership",
                     value = tostring(player.MembershipType),
                     inline = true
                 },
                 {
-                    name = "🎮 Place ID",
+                    name = "Place ID",
                     value = tostring(game.PlaceId),
                     inline = true
                 },
                 {
-                    name = "🧵 Job ID",
+                    name = "Job ID",
                     value = game.JobId,
                     inline = false
                 },
                 {
-                    name = "👥 Players no servidor",
+                    name = "Players no servidor",
                     value = tostring(#Players:GetPlayers()),
                     inline = true
                 },
                 {
-                    name = "🟦 Time",
+                    name = "Time",
                     value = player.Team and player.Team.Name or "Sem time",
                     inline = true
                 },
                 {
-                    name = "❤️ Vida",
-                    value = humanoid and tostring(math.floor(humanoid.Health)) or "N/A",
+                    name = "Vida",
+                    value = charInfo.humanoid and tostring(math.floor(charInfo.humanoid.Health)) or "N/A",
                     inline = true
                 },
                 {
-                    name = "🏃 WalkSpeed",
-                    value = humanoid and tostring(humanoid.WalkSpeed) or "N/A",
+                    name = "WalkSpeed",
+                    value = charInfo.humanoid and tostring(charInfo.humanoid.WalkSpeed) or "N/A",
                     inline = true
                 },
                 {
-                    name = "🦘 JumpPower",
-                    value = humanoid and tostring(humanoid.JumpPower) or "N/A",
+                    name = "JumpPower",
+                    value = charInfo.humanoid and tostring(charInfo.humanoid.JumpPower) or "N/A",
                     inline = true
                 },
                 {
-                    name = "📍 Posição no mapa",
-                    value = positionText,
+                    name = "Posição no mapa",
+                    value = charInfo.positionText,
                     inline = false
                 },
                 {
-                    name = "⏰ Hora da pesquisa",
+                    name = "Hora da pesquisa",
                     value = timeNow,
                     inline = false
                 },
                 {
-                    name = "🔗 Perfil",
+                    name = "Perfil",
                     value = string.format(
                         "[Clique aqui](https://www.roblox.com/users/%d/profile)",
                         userId
@@ -185,17 +232,6 @@ Tab1:AddButton({
                 }
             }
         }
-
-        local request =
-            (syn and syn.request)
-            or (http and http.request)
-            or http_request
-            or (fluxus and fluxus.request)
-
-        if not request then
-            warn("Executor não suporta requests HTTP")
-            return
-        end
 
         request({
             Url = webhookSelected,
